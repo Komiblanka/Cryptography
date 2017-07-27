@@ -59,3 +59,32 @@ Interesting link:
 -----------------
 http://users.dcc.uchile.cl/~pcamacho/tutorial/crypto/openssl/openssl_intro.html
 
+Elliptic Curve Cryptography:
+============================
+
+Generate a temporary EC private key using openssl ec
+----------------------------------------------------
+openssl ec -genkey -param_enc explicit -out temppriv.pem -name brainpool512r1
+
+Use the recipient's public key to derive a shared secret using openssl pkeyutl
+------------------------------------------------------------------------------
+openssl pkeyutl -derive -inkey temppriv.pem -peerkey RecipientsPublicKey.pem -out SharedSecret.bin
+openssl dgst -sha256 -out HashedSharedSecret SharedSecret.bin
+
+Encrypt the plaintext using openssl enc using the derived secret key
+--------------------------------------------------------------------
+openssl enc -aes-256-ofb -iv "00000000000000000000000000000000" -K "<Enter Hex From HashedSharedSecret here>" -in YourPlaintextFile -out ciphertext.enc
+
+Generate the EC public key from the private key using openssl ecparam
+----------------------------------------------------------------------
+openssl ecparam -in tempprivkey.pem -pubout -out temppubkey.pem
+
+Generate the HMAC of the cipher text into a third file using openssl dgst
+--------------------------------------------------------------------------
+openssl dgst -sha256 -hmac "<Enter Hex From HashedSharedSecret here>" -out MAC.bin ciphertext.enc
+#strip the everything non-hex using your editor from MAC.bin
+
+Delete the EC private key and the shared secret
+-----------------------------------------------
+rm SharedSecret.bin
+rm tempprivkey.pem
